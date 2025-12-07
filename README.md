@@ -92,9 +92,59 @@
 
 ---
 
+## 8. セットアップ手順
+
+### 8.1 データベースのセットアップ
+
+1. **Supabaseプロジェクトの作成**
+   - [Supabase](https://supabase.com/)にアクセスしてアカウントを作成
+   - 新しいプロジェクトを作成
+
+2. **スキーマの適用**
+   - 📖 **詳細な手順**: [SETUP_DATABASE.md](./SETUP_DATABASE.md) を参照してください
+   - Supabaseダッシュボードの「SQL Editor」を開く
+   - `schema.sql`の内容をコピー＆ペーストして実行
+   - すべてのテーブル、インデックス、トリガーが作成されます
+
+3. **接続テスト**
+   ```bash
+   npm run test:connection
+   ```
+   - 環境変数とデータベーススキーマが正しく設定されているか確認できます
+
+### 8.2 環境変数の設定
+
+1. **環境変数ファイルの作成**
+   ```bash
+   cp env.example .env.local
+   ```
+
+2. **APIキーの取得**
+   - 📖 **詳細な取得方法**: [SETUP_API_KEYS.md](./SETUP_API_KEYS.md) を参照してください
+   - 必要な認証情報：
+     - **Supabase**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+     - **OpenAI**: `OPENAI_API_KEY`
+
+3. **`.env.local`ファイルを編集**
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+   OPENAI_API_KEY=your_openai_api_key
+   ```
+
+### 8.3 開発サーバーの起動
+
+```bash
+npm install
+npm run dev
+```
+
+ブラウザで `http://localhost:3000` にアクセスして確認してください。
+
+---
+
 ### ネクストステップ
 
 PRDが完成しました。これから開発フェーズに入ります。
-まずは**「データベースのテーブル定義」**を作成し、Supabase上に箱を用意するところから始めるのがスムーズです。
-
-テーブル設計（SQL）の案を作成しましょうか？
+データベーススキーマは `schema.sql` に定義されています。Supabaseで実行してください。
