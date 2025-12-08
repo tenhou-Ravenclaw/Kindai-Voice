@@ -42,23 +42,21 @@
 }
 ```
 
-### 2. Vercel Cronジョブ（自動要約処理）
-
-**エンドポイント:** `GET /api/cron/summarize-lectures`
-
-**実行頻度:** 1時間ごと（`0 * * * *`）
+### 2. 手動要約生成（一括処理）
 
 **機能:**
-- `status = 'ended'`の講義を取得
-- 講義終了から1時間経過後、自動的に要約処理を実行
+- 管理画面（`/admin/lectures/end`）から一括で要約を生成
+- `status = 'ended'`の講義を一括処理
 - 既に要約済みの講義はスキップ
-- 各講義に対して要約生成APIを呼び出し
 
-**設定:**
-- `vercel.json`にCronジョブを定義
+**使用方法:**
+1. 管理画面の「講義終了管理」にアクセス
+2. 「一括生成」ボタンをクリック
+3. 終了した講義の要約が一括で生成される
 
-**セキュリティ:**
-- 本番環境では`CRON_SECRET`環境変数で認証（オプション）
+**注意事項:**
+- Vercel HobbyプランではCronジョブの実行頻度に制限があるため、手動実行を推奨
+- 大量の講義がある場合、処理に時間がかかる可能性があります
 
 ### 3. 要約表示画面
 
@@ -81,11 +79,11 @@
 curl -X POST http://localhost:3000/api/lectures/{lecture_id}/summarize
 ```
 
-### 自動要約（Vercel Cron）
+### 一括要約生成（管理画面）
 
-1. `vercel.json`をコミット・プッシュ
-2. Vercelが自動的にCronジョブを登録
-3. 1時間ごとに自動実行される
+1. 管理画面（`/admin/lectures/end`）にアクセス
+2. 「一括生成」ボタンをクリック
+3. 終了した講義の要約が一括で生成される
 
 ### 要約を表示
 
@@ -110,8 +108,8 @@ curl -X POST http://localhost:3000/api/lectures/{lecture_id}/summarize
 
 ### タイミング
 
-- **遅延時間:** 講義終了から1時間後に要約を生成（設定可能）
-- **実行頻度:** 1時間ごとにチェック（Vercel Cron）
+- **実行方法:** 管理画面から手動で一括生成
+- **推奨:** 講義終了後、適切なタイミングで手動実行
 
 ### セキュリティ
 
@@ -127,11 +125,11 @@ curl -X POST http://localhost:3000/api/lectures/{lecture_id}/summarize
 3. 投稿が存在するか確認
 4. 既に要約が存在しないか確認
 
-### Cronジョブが実行されない
+### 一括要約生成が失敗する
 
-1. `vercel.json`が正しくデプロイされているか確認
-2. Vercelダッシュボードの「Cron Jobs」で登録されているか確認
-3. 実行ログを確認
+1. OpenAI APIキーが設定されているか確認
+2. 終了した講義が存在するか確認
+3. ブラウザのコンソールでエラーを確認
 
 ### エラーメッセージ
 
@@ -142,7 +140,7 @@ curl -X POST http://localhost:3000/api/lectures/{lecture_id}/summarize
 ## 関連ファイル
 
 - `app/api/lectures/[id]/summarize/route.ts` - 要約生成API
-- `app/api/cron/summarize-lectures/route.ts` - 自動要約Cronジョブ
+- `app/api/cron/summarize-lectures/route.ts` - 一括要約処理API（参考用、現在は未使用）
 - `app/api/lectures/[id]/summary/route.ts` - 要約取得API
 - `app/lecture/[id]/summary/page.tsx` - 要約表示画面
 - `vercel.json` - Vercel Cron設定

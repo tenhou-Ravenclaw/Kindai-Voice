@@ -114,6 +114,66 @@ export default function LectureEndPage() {
     }
   }
 
+  const handleBatchSummarize = async () => {
+    const endedLectures = lectures.filter((l) => l.status === 'ended')
+    
+    if (endedLectures.length === 0) {
+      alert('要約を生成できる講義がありません')
+      return
+    }
+
+    if (
+      !confirm(
+        `終了した講義 ${endedLectures.length}件の要約を一括生成しますか？\n\nOpenAI APIを使用するため、コストが発生する可能性があります。\n\n処理には時間がかかる場合があります。`
+      )
+    )
+      return
+
+    try {
+      const token = await getAuthToken()
+      if (!token) {
+        router.push('/login')
+        return
+      }
+
+      const results = []
+      let successCount = 0
+      let errorCount = 0
+
+      for (const lecture of endedLectures) {
+        try {
+          const response = await fetch(`/api/lectures/${lecture.id}/summarize`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
+
+          const data = await response.json()
+
+          if (response.ok) {
+            successCount++
+            results.push({ lecture_id: lecture.id, status: 'success' })
+          } else {
+            errorCount++
+            results.push({ lecture_id: lecture.id, status: 'error', error: data.error })
+          }
+        } catch (error: any) {
+          errorCount++
+          results.push({ lecture_id: lecture.id, status: 'error', error: error.message })
+        }
+      }
+
+      alert(
+        `一括要約生成が完了しました\n\n成功: ${successCount}件\n失敗: ${errorCount}件`
+      )
+      fetchEndedLectures()
+    } catch (error) {
+      console.error('一括要約生成エラー:', error)
+      alert('エラーが発生しました')
+    }
+  }
+
   const handleDeleteData = async (lectureId: string) => {
     if (
       !confirm(
@@ -195,10 +255,30 @@ export default function LectureEndPage() {
           </button>
         </div>
 
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
-          <p className="text-sm text-yellow-800 dark:text-yellow-200">
-            ⚠️ 注意: データ削除は不可逆的な操作です。削除されたデータは復元できません。
-          </p>
+        <div className="space-y-4 mb-6">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+              ⚠️ 注意: データ削除は不可逆的な操作です。削除されたデータは復元できません。
+            </p>
+          </div>
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
+                  一括要約生成
+                </p>
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  終了した講義の要約を一括で生成できます
+                </p>
+              </div>
+              <button
+                onClick={handleBatchSummarize}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm"
+              >
+                一括生成
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="space-y-4">

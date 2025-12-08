@@ -67,14 +67,14 @@
 - **実装ファイル:** `app/api/lectures/[id]/delete-data/route.ts`
 - **ドキュメント:** `docs/DELETE_DATA_API.md`
 
-#### 1.3 Vercel Cronジョブ ✅
+#### 1.3 手動要約生成（一括処理） ✅
 - **機能:**
-  - 定期的に`status = 'ended'`の講義をチェック
-  - 講義終了から1時間経過後、自動的に要約処理を実行
-- **設定:**
-  - `vercel.json`にCronジョブを定義（1時間ごと）
-  - `app/api/cron/summarize-lectures/route.ts`を実装
-- **実行頻度:** 1時間ごと（`0 * * * *`）
+  - 管理画面から終了した講義の要約を一括生成
+  - `status = 'ended'`の講義を一括処理
+- **実装場所:**
+  - `app/admin/lectures/end/page.tsx` - 一括要約生成ボタン
+- **注意事項:**
+  - Vercel HobbyプランではCronジョブの実行頻度に制限があるため、手動実行を採用
 
 #### 1.4 要約表示画面 ✅
 - **機能:**
