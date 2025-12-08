@@ -18,6 +18,8 @@ export default function LecturePage() {
     const [sort, setSort] = useState<'newest' | 'popular'>('newest')
     const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set())
     const [likingPosts, setLikingPosts] = useState<Set<string>>(new Set())
+    const [isLectureOpen, setIsLectureOpen] = useState(true)
+    const [remainingMinutes, setRemainingMinutes] = useState<number | null>(null)
 
     const maxLength = 200
     const userIdentifier = getUserIdentifier()
@@ -69,13 +71,40 @@ export default function LecturePage() {
         }
     }
 
+    // 講義状態を取得
+    const fetchLectureStatus = async () => {
+        try {
+            const response = await fetch(`/api/lectures/${lectureId}/status`)
+            const data = await response.json()
+
+            if (response.ok) {
+                setIsLectureOpen(data.is_open)
+                setRemainingMinutes(data.remaining_minutes)
+            }
+        } catch (err) {
+            console.error('講義状態取得エラー:', err)
+        }
+    }
+
     // 初回読み込み時とソート変更時に投稿を取得
     useEffect(() => {
         if (lectureId) {
             fetchPosts()
+            fetchLectureStatus()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [lectureId, sort])
+
+    // 講義状態を定期的に確認（30秒ごと）
+    useEffect(() => {
+        if (!lectureId) return
+
+        const interval = setInterval(() => {
+            fetchLectureStatus()
+        }, 30000) // 30秒ごと
+
+        return () => clearInterval(interval)
+    }, [lectureId])
 
     // リアルタイム同期（Supabase Realtime）
     useEffect(() => {
@@ -160,6 +189,11 @@ export default function LecturePage() {
     // 投稿を送信
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+
+        if (!isLectureOpen) {
+            setError('この講義は投稿受付を終了しました')
+            return
+        }
 
         if (!content.trim()) {
             setError('投稿内容を入力してください')
@@ -308,11 +342,25 @@ export default function LecturePage() {
             <div className="max-w-4xl mx-auto px-4 py-6">
                 {/* ヘッダー */}
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                        講義ページ
-                    </h1>
+                    <div className="flex items-center justify-between mb-2">
+                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                            講義ページ
+                        </h1>
+                        {!isLectureOpen && (
+                            <span className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full text-sm font-medium">
+                                投稿受付終了
+                            </span>
+                        )}
+                        {isLectureOpen && remainingMinutes !== null && remainingMinutes <= 15 && (
+                            <span className="px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full text-sm font-medium">
+                                あと{remainingMinutes}分
+                            </span>
+                        )}
+                    </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                        匿名で質問や意見を投稿できます
+                        {isLectureOpen
+                            ? '匿名で質問や意見を投稿できます（終了時刻から15分後まで投稿可能）'
+                            : 'この講義は投稿受付を終了しました'}
                     </p>
                 </div>
 
@@ -334,10 +382,10 @@ export default function LecturePage() {
                                     setError(null)
                                 }}
                                 placeholder="質問や意見を入力してください（最大200文字）"
-                                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
                                 rows={4}
                                 maxLength={maxLength}
-                                disabled={isSubmitting}
+                                disabled={isSubmitting || !isLectureOpen}
                             />
                             <div className="flex justify-between items-center mt-2">
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -361,7 +409,7 @@ export default function LecturePage() {
                         {/* 送信ボタン */}
                         <button
                             type="submit"
-                            disabled={isSubmitting || !content.trim() || content.length > maxLength}
+                            disabled={isSubmitting || !isLectureOpen || !content.trim() || content.length > maxLength}
                             className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg"
                         >
                             {isSubmitting ? (
@@ -401,8 +449,8 @@ export default function LecturePage() {
                         <button
                             onClick={() => setSort('newest')}
                             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${sort === 'newest'
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                                 }`}
                         >
                             新着順
@@ -410,8 +458,8 @@ export default function LecturePage() {
                         <button
                             onClick={() => setSort('popular')}
                             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${sort === 'popular'
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                                 }`}
                         >
                             人気順
@@ -466,8 +514,8 @@ export default function LecturePage() {
                                         onClick={() => handleLike(post.id)}
                                         disabled={likingPosts.has(post.id)}
                                         className={`flex items-center space-x-1 px-3 py-1.5 rounded-full transition-colors ${likedPosts.has(post.id)
-                                                ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
-                                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                            ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                                            : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
                                             } disabled:opacity-50 disabled:cursor-not-allowed`}
                                     >
                                         <svg

@@ -51,10 +51,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 講義が開催中か確認
+    // 講義が開催中か確認（15分の猶予期間を考慮）
     const { data: lecture, error: lectureError } = await supabase
       .from('lectures')
-      .select('id, status')
+      .select('id, status, scheduled_end_time')
       .eq('id', lecture_id)
       .single()
 
@@ -65,9 +65,46 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (lecture.status !== 'active') {
+    // 講義が投稿可能かどうかを判定（終了時刻+15分まで）
+    const now = new Date()
+    const gracePeriodMinutes = 15
+    const endTime = lecture.scheduled_end_time ? new Date(lecture.scheduled_end_time) : null
+    const gracePeriodEndTime = endTime
+      ? new Date(endTime.getTime() + gracePeriodMinutes * 60 * 1000)
+      : null
+
+    let isOpen = false
+
+    if (lecture.status === 'active') {
+      if (gracePeriodEndTime && now < gracePeriodEndTime) {
+        isOpen = true
+      } else if (!gracePeriodEndTime) {
+        // 終了時刻が設定されていない場合は常にオープン
+        isOpen = true
+      } else {
+        // デバッグ用ログ
+        console.log('投稿拒否:', {
+          lectureId: lecture.id,
+          status: lecture.status,
+          scheduled_end_time: lecture.scheduled_end_time,
+          endTime: endTime?.toISOString(),
+          gracePeriodEndTime: gracePeriodEndTime?.toISOString(),
+          now: now.toISOString(),
+          isBefore: now < gracePeriodEndTime,
+        })
+      }
+    }
+
+    if (!isOpen) {
       return NextResponse.json(
-        { error: 'この講義は現在開催されていません' },
+        { 
+          error: 'この講義は投稿受付を終了しました（終了時刻から15分経過）',
+          debug: {
+            scheduled_end_time: lecture.scheduled_end_time,
+            grace_period_end_time: gracePeriodEndTime?.toISOString(),
+            current_time: now.toISOString(),
+          }
+        },
         { status: 403 }
       )
     }
