@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { supabaseAdmin } from '@/lib/supabase/server'
+import { getSupabaseAdmin } from '@/lib/supabase/server'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
     }
 
+    const supabaseAdmin = getSupabaseAdmin()
     const searchParams = request.nextUrl.searchParams
     const courseId = searchParams.get('course_id')
     const status = searchParams.get('status')
@@ -122,6 +123,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const supabaseAdmin = getSupabaseAdmin()
     const { data: lecture, error } = await supabaseAdmin
       .from('lectures')
       .insert({

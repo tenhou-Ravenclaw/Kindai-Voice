@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase/server'
+import { getSupabaseAdmin } from '@/lib/supabase/server'
 
 /**
  * 講義の自動要約処理
@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const supabaseAdmin = getSupabaseAdmin()
     const now = new Date()
     const delayHours = 1 // 講義終了から1時間後に要約を生成
     const delayMs = delayHours * 60 * 60 * 1000

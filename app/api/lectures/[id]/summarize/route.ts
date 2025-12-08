@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase/server'
+import { getSupabaseAdmin } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
 import OpenAI from 'openai'
 
@@ -79,6 +79,8 @@ export async function POST(
         { status: 500 }
       )
     }
+
+    const supabaseAdmin = getSupabaseAdmin()
 
     // 講義情報を取得
     const { data: lecture, error: lectureError } = await supabaseAdmin

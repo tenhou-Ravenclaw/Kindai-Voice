@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase/server'
+import { getSupabaseAdmin } from '@/lib/supabase/server'
 
 /**
  * 講義の自動終了チェック
@@ -29,6 +29,8 @@ export async function GET(request: NextRequest) {
 
     // 現在時刻
     const now = new Date()
+
+    const supabaseAdmin = getSupabaseAdmin()
 
     // status = 'active'の講義を取得
     const { data: activeLectures, error: fetchError } = await supabaseAdmin

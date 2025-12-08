@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { supabaseAdmin } from '@/lib/supabase/server'
+import { getSupabaseAdmin } from '@/lib/supabase/server'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -48,6 +48,7 @@ export async function PUT(
     const resolvedParams = await Promise.resolve(params)
     const lectureId = resolvedParams.id
 
+    const supabaseAdmin = getSupabaseAdmin()
     const body = await request.json()
     const {
       status,
@@ -103,6 +104,7 @@ export async function DELETE(
     const resolvedParams = await Promise.resolve(params)
     const lectureId = resolvedParams.id
 
+    const supabaseAdmin = getSupabaseAdmin()
     const { error } = await supabaseAdmin
       .from('lectures')
       .delete()

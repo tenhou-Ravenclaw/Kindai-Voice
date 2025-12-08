@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase/server'
+import { getSupabaseAdmin } from '@/lib/supabase/server'
 
 /**
  * 講義の生データを物理削除するAPI
@@ -55,6 +55,8 @@ export async function POST(
         { status: 400 }
       )
     }
+
+    const supabaseAdmin = getSupabaseAdmin()
 
     // 削除前の統計情報を取得（ログ用）
     const { data: postsData, error: postsError } = await supabaseAdmin
@@ -155,6 +157,8 @@ export async function GET(
         { status: 400 }
       )
     }
+
+    const supabaseAdmin = getSupabaseAdmin()
 
     // 講義情報を取得
     const { data: lecture, error: lectureError } = await supabaseAdmin
