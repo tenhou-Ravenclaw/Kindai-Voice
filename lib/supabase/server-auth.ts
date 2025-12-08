@@ -24,6 +24,7 @@ export async function createServerSupabaseClient() {
           } catch (error) {
             // サーバーコンポーネントではCookieの設定ができない場合がある
             // この場合はクライアントサイドで設定される
+            console.error('Error setting cookies in setAll:', error);
           }
         },
       },
