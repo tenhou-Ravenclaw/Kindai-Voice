@@ -88,23 +88,26 @@
 
 ---
 
-### 2. 自動終了トリガー
+### 2. 自動終了トリガー ✅ **実装済み**
 
 **概要:** 講義終了時刻をチェックして自動的に`status = 'ended'`に変更
 
-**実装が必要な機能:**
+**実装済み機能:**
 
-#### 2.1 自動終了チェックAPI
-- **エンドポイント:** `POST /api/cron/check-lecture-end` または Vercel Cron
+#### 2.1 自動終了チェックAPI ✅
+- **エンドポイント:** `GET /api/cron/check-lecture-end`
 - **機能:**
   - `status = 'active'`の講義を取得
   - `scheduled_end_time`をチェック
   - 終了時刻を過ぎていたら`status = 'ended'`に更新
 - **実行頻度:** 5分ごと（Vercel Cron）
+- **実装ファイル:** `app/api/cron/check-lecture-end/route.ts`
+- **設定ファイル:** `vercel.json`
+- **ドキュメント:** `docs/AUTO_END_TRIGGER.md`
 
 **現在の状態:**
-- 手動終了API（`POST /api/lectures/[id]/end`）は実装済み
-- 自動終了は未実装
+- 手動終了API（`POST /api/lectures/[id]/end`）は実装済み ✅
+- 自動終了は実装済み ✅
 
 ---
 
@@ -193,7 +196,7 @@
 
 ### 高優先度
 1. **Phase 3: AI要約機能** - プロダクトの核心機能
-2. **自動終了トリガー** - 運用に必須
+2. ~~**自動終了トリガー**~~ ✅ **実装済み** - 運用に必須
 3. **荒らし対策（レートリミット）** - セキュリティ・品質に重要
 
 ### 中優先度
