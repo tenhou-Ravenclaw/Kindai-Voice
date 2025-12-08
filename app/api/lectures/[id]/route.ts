@@ -56,6 +56,11 @@ export async function GET(
       )
     }
 
+    // coursesはリレーションシップなので、配列または単一オブジェクトの可能性がある
+    const course = Array.isArray(lecture.courses)
+      ? lecture.courses[0] || null
+      : lecture.courses || null
+
     return NextResponse.json({
       lecture: {
         id: lecture.id,
@@ -66,11 +71,11 @@ export async function GET(
         scheduled_end_time: lecture.scheduled_end_time,
         is_rescheduled: lecture.is_rescheduled,
       },
-      course: lecture.courses
+      course: course
         ? {
-            id: lecture.courses.id,
-            code: lecture.courses.code,
-            title: lecture.courses.title,
+            id: course.id,
+            code: course.code,
+            title: course.title,
           }
         : null,
     })

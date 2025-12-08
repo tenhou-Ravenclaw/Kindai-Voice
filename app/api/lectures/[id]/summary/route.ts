@@ -73,13 +73,18 @@ export async function GET(
             id: lecture.id,
             session_number: lecture.session_number,
             status: lecture.status,
-            course: lecture.courses
-              ? {
-                  id: lecture.courses.id,
-                  code: lecture.courses.code,
-                  title: lecture.courses.title,
-                }
-              : null,
+            course: (() => {
+              const course = Array.isArray(lecture.courses)
+                ? lecture.courses[0] || null
+                : lecture.courses || null
+              return course
+                ? {
+                    id: course.id,
+                    code: course.code,
+                    title: course.title,
+                  }
+                : null
+            })(),
           }
         : null,
     })
