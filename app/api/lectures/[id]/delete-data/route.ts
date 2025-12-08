@@ -22,6 +22,8 @@ export async function POST(
       )
     }
 
+    const supabaseAdmin = getSupabaseAdmin()
+
     // 講義情報を取得
     const { data: lecture, error: lectureError } = await supabaseAdmin
       .from('lectures')
@@ -55,8 +57,6 @@ export async function POST(
         { status: 400 }
       )
     }
-
-    const supabaseAdmin = getSupabaseAdmin()
 
     // 削除前の統計情報を取得（ログ用）
     const { data: postsData, error: postsError } = await supabaseAdmin
