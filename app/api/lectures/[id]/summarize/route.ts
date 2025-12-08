@@ -53,13 +53,20 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
-    // 認証チェック
-    const user = await checkAuth(request)
-    if (!user) {
-      return NextResponse.json(
-        { error: '認証が必要です' },
-        { status: 401 }
-      )
+    // 内部呼び出し（Cronジョブ）の場合はCRON_SECRETで認証
+    const cronSecret = request.headers.get('x-cron-secret')
+    const expectedSecret = process.env.CRON_SECRET
+    const isInternalCall = cronSecret && expectedSecret && cronSecret === expectedSecret
+
+    // 内部呼び出しでない場合のみ、通常の認証チェック
+    if (!isInternalCall) {
+      const user = await checkAuth(request)
+      if (!user) {
+        return NextResponse.json(
+          { error: '認証が必要です' },
+          { status: 401 }
+        )
+      }
     }
 
     const resolvedParams = await Promise.resolve(params)
