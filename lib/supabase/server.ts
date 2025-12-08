@@ -24,5 +24,16 @@ export function getSupabaseAdmin() {
 }
 
 // 後方互換性のため（既存コードで使用されている）
-export const supabaseAdmin = getSupabaseAdmin()
+// 注意: このエクスポートは非推奨です。新しいコードでは getSupabaseAdmin() を使用してください
+// モジュール読み込み時にエラーを避けるため、遅延評価にしています
+let _supabaseAdminInstance: ReturnType<typeof getSupabaseAdmin> | null = null
+
+export const supabaseAdmin = new Proxy({} as ReturnType<typeof getSupabaseAdmin>, {
+  get(_target, prop) {
+    if (!_supabaseAdminInstance) {
+      _supabaseAdminInstance = getSupabaseAdmin()
+    }
+    return (_supabaseAdminInstance as any)[prop]
+  }
+})
 
