@@ -79,6 +79,41 @@ export default function LectureEndPage() {
     }
   }
 
+  const handleSummarize = async (lectureId: string) => {
+    if (!confirm('この講義の要約を生成しますか？\n\nOpenAI APIを使用するため、コストが発生する可能性があります。')) return
+
+    setProcessingId(lectureId)
+
+    try {
+      const token = await getAuthToken()
+      if (!token) {
+        router.push('/login')
+        return
+      }
+
+      const response = await fetch(`/api/lectures/${lectureId}/summarize`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        alert('要約が正常に生成されました')
+        fetchEndedLectures()
+      } else {
+        alert(data.error || '要約の生成に失敗しました')
+      }
+    } catch (error) {
+      console.error('要約生成エラー:', error)
+      alert('エラーが発生しました')
+    } finally {
+      setProcessingId(null)
+    }
+  }
+
   const handleDeleteData = async (lectureId: string) => {
     if (
       !confirm(
@@ -179,6 +214,7 @@ export default function LectureEndPage() {
                 key={lecture.id}
                 lecture={lecture}
                 onEnd={handleEndLecture}
+                onSummarize={handleSummarize}
                 onDeleteData={handleDeleteData}
                 processingId={processingId}
                 getStats={getStats}
@@ -194,12 +230,14 @@ export default function LectureEndPage() {
 function LectureCard({
   lecture,
   onEnd,
+  onSummarize,
   onDeleteData,
   processingId,
   getStats,
 }: {
   lecture: Lecture & { courses: { code: string; title: string } }
   onEnd: (id: string) => void
+  onSummarize: (id: string) => void
   onDeleteData: (id: string) => void
   processingId: string | null
   getStats: (id: string) => Promise<any>
@@ -276,13 +314,32 @@ function LectureCard({
               </button>
             )}
             {lecture.status === 'ended' && (
-              <button
-                onClick={() => onDeleteData(lecture.id)}
-                disabled={processingId === lecture.id}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg disabled:opacity-50"
+              <>
+                <button
+                  onClick={() => onSummarize(lecture.id)}
+                  disabled={processingId === lecture.id}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg disabled:opacity-50"
+                >
+                  {processingId === lecture.id ? '要約生成中...' : '要約を生成'}
+                </button>
+                <button
+                  onClick={() => onDeleteData(lecture.id)}
+                  disabled={processingId === lecture.id}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg disabled:opacity-50"
+                >
+                  {processingId === lecture.id ? '削除中...' : '生データを削除'}
+                </button>
+              </>
+            )}
+            {lecture.status === 'summarized' && (
+              <a
+                href={`/lecture/${lecture.id}/summary`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg inline-block"
               >
-                {processingId === lecture.id ? '削除中...' : '生データを削除'}
-              </button>
+                要約を表示
+              </a>
             )}
           </>
         )}

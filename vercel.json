@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/check-lecture-end",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/summarize-lectures",
+      "schedule": "0 * * * *"
     }
   ]
 }
