@@ -1,10 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import OpenAI from 'openai'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables')
+}
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+// 認証チェック
+async function checkAuth(request: NextRequest) {
+  const authHeader = request.headers.get('authorization')
+  if (!authHeader) {
+    return null
+  }
+
+  const token = authHeader.replace('Bearer ', '')
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser(token)
+
+  if (error || !user) {
+    return null
+  }
+
+  return user
+}
 
 /**
  * 講義のAI要約を生成するAPI
@@ -15,12 +45,23 @@ const openai = new OpenAI({
  * - OpenAI API（gpt-4o-mini）に送信
  * - 「主要な論点」「学生の関心事項」を要約
  * - summariesテーブルに保存
+ * 
+ * ⚠️ 認証必須: 管理者のみが実行可能
  */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
+    // 認証チェック
+    const user = await checkAuth(request)
+    if (!user) {
+      return NextResponse.json(
+        { error: '認証が必要です' },
+        { status: 401 }
+      )
+    }
+
     const resolvedParams = await Promise.resolve(params)
     const lectureId = resolvedParams.id
 
