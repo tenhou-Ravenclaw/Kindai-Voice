@@ -47,7 +47,7 @@ export default function Home() {
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
               Kindai Voice
-            </h1>
+          </h1>
             <p className="text-gray-600 dark:text-gray-400">
               講義用匿名オピニオンボード
             </p>
@@ -114,8 +114,8 @@ export default function Home() {
           <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
             <p className="text-xs text-center text-gray-500 dark:text-gray-400">
               近畿大学情報学部 講義用匿名オピニオンボード
-            </p>
-          </div>
+          </p>
+        </div>
         </div>
       </main>
     </div>

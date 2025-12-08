@@ -1,0 +1,9 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/check-lecture-end",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
+

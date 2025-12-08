@@ -4,7 +4,12 @@ import { useParams } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { getUserIdentifier } from '@/lib/utils/user-identifier'
-import type { Post } from '@/lib/supabase/types'
+import type { Post, Course, Lecture } from '@/lib/supabase/types'
+
+interface LectureInfo {
+  lecture: Lecture
+  course: Course | null
+}
 
 export default function LecturePage() {
     const params = useParams()
@@ -20,6 +25,7 @@ export default function LecturePage() {
     const [likingPosts, setLikingPosts] = useState<Set<string>>(new Set())
     const [isLectureOpen, setIsLectureOpen] = useState(true)
     const [remainingMinutes, setRemainingMinutes] = useState<number | null>(null)
+    const [lectureInfo, setLectureInfo] = useState<LectureInfo | null>(null)
 
     const maxLength = 200
     const userIdentifier = getUserIdentifier()
@@ -71,6 +77,20 @@ export default function LecturePage() {
         }
     }
 
+    // 講義情報を取得
+    const fetchLectureInfo = async () => {
+        try {
+            const response = await fetch(`/api/lectures/${lectureId}`)
+            const data = await response.json()
+
+            if (response.ok) {
+                setLectureInfo(data)
+            }
+        } catch (err) {
+            console.error('講義情報取得エラー:', err)
+        }
+    }
+
     // 講義状態を取得
     const fetchLectureStatus = async () => {
         try {
@@ -89,6 +109,7 @@ export default function LecturePage() {
     // 初回読み込み時とソート変更時に投稿を取得
     useEffect(() => {
         if (lectureId) {
+            fetchLectureInfo()
             fetchPosts()
             fetchLectureStatus()
         }
@@ -343,25 +364,50 @@ export default function LecturePage() {
                 {/* ヘッダー */}
                 <div className="mb-6">
                     <div className="flex items-center justify-between mb-2">
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                            講義ページ
-                        </h1>
-                        {!isLectureOpen && (
-                            <span className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full text-sm font-medium">
-                                投稿受付終了
-                            </span>
-                        )}
-                        {isLectureOpen && remainingMinutes !== null && remainingMinutes <= 15 && (
-                            <span className="px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full text-sm font-medium">
-                                あと{remainingMinutes}分
-                            </span>
+                        <div>
+                            {lectureInfo?.course ? (
+                                <div>
+                                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                        {lectureInfo.course.code} - {lectureInfo.course.title}
+                                    </h1>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                        第{lectureInfo.lecture.session_number}回
+                                    </p>
+                                </div>
+                            ) : (
+                                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                    講義ページ
+                                </h1>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {!isLectureOpen && (
+                                <span className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full text-sm font-medium">
+                                    投稿受付終了
+                                </span>
+                            )}
+                            {isLectureOpen && remainingMinutes !== null && remainingMinutes <= 15 && (
+                                <span className="px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full text-sm font-medium">
+                                    あと{remainingMinutes}分
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {isLectureOpen
+                                ? '匿名で質問や意見を投稿できます（終了時刻から15分後まで投稿可能）'
+                                : 'この講義は投稿受付を終了しました'}
+                        </p>
+                        {!isLectureOpen && lectureInfo?.lecture.status === 'summarized' && (
+                            <a
+                                href={`/lecture/${lectureId}/summary`}
+                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-sm"
+                            >
+                                要約を表示
+                            </a>
                         )}
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {isLectureOpen
-                            ? '匿名で質問や意見を投稿できます（終了時刻から15分後まで投稿可能）'
-                            : 'この講義は投稿受付を終了しました'}
-                    </p>
                 </div>
 
                 {/* 投稿フォーム */}
