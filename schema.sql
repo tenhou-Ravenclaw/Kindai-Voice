@@ -27,8 +27,8 @@ CREATE TABLE courses (
   regular_start_time TIME,
   regular_end_time TIME,
   first_session_date DATE,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- テーブル2: lectures（各回の講義セッション情報）
@@ -37,11 +37,11 @@ CREATE TABLE lectures (
   course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
   session_number INTEGER NOT NULL CHECK (session_number >= 1 AND session_number <= 15),
   status lecture_status NOT NULL DEFAULT 'scheduled',
-  scheduled_start_time TIMESTAMP,
-  scheduled_end_time TIMESTAMP,
+  scheduled_start_time TIMESTAMPTZ,
+  scheduled_end_time TIMESTAMPTZ,
   is_rescheduled BOOLEAN NOT NULL DEFAULT FALSE,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(course_id, session_number)
 );
 
@@ -51,8 +51,8 @@ CREATE TABLE posts (
   lecture_id UUID NOT NULL REFERENCES lectures(id) ON DELETE CASCADE,
   content TEXT NOT NULL CHECK (LENGTH(content) <= 200),
   like_count INTEGER NOT NULL DEFAULT 0 CHECK (like_count >= 0),
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  deleted_at TIMESTAMP
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at TIMESTAMPTZ
 );
 
 -- テーブル4: likes（いいねデータ）
@@ -60,7 +60,7 @@ CREATE TABLE likes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
   user_identifier VARCHAR(255) NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(post_id, user_identifier)
 );
 
@@ -71,7 +71,7 @@ CREATE TABLE summaries (
   summary_text TEXT NOT NULL,
   total_posts_count INTEGER CHECK (total_posts_count >= 0),
   total_likes_count INTEGER CHECK (total_likes_count >= 0),
-  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ============================================

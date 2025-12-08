@@ -334,13 +334,24 @@ export default function LecturePage() {
         }
     }
 
-    // 日時をフォーマット
+    // 日時をフォーマット（タイムゾーン対応）
     const formatDateTime = (dateString: string) => {
+        // ISO 8601形式の文字列をDateオブジェクトに変換
+        // Supabaseから返されるTIMESTAMPTZはISO 8601形式（例: "2024-01-01T12:00:00+09:00"）
         const date = new Date(dateString)
+        
+        // 無効な日付の場合はエラーを返す
+        if (isNaN(date.getTime())) {
+            console.error('Invalid date string:', dateString)
+            return '日時不明'
+        }
+
+        // 現在時刻を取得（ローカルタイムゾーン）
         const now = new Date()
         const diff = now.getTime() - date.getTime()
         const minutes = Math.floor(diff / 60000)
 
+        // 相対時間で表示
         if (minutes < 1) {
             return 'たった今'
         } else if (minutes < 60) {
@@ -349,11 +360,13 @@ export default function LecturePage() {
             const hours = Math.floor(minutes / 60)
             return `${hours}時間前`
         } else {
+            // 1日以上前の場合は絶対時刻で表示（日本時間）
             return date.toLocaleDateString('ja-JP', {
                 month: 'short',
                 day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit',
+                timeZone: 'Asia/Tokyo',
             })
         }
     }

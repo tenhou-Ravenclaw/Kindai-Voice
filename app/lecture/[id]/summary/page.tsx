@@ -177,7 +177,14 @@ export default function SummaryPage() {
           </div>
           <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              生成日時: {new Date(summaryData.summary.created_at).toLocaleString('ja-JP')}
+              生成日時: {new Date(summaryData.summary.created_at).toLocaleString('ja-JP', {
+                timeZone: 'Asia/Tokyo',
+                year: 'numeric',
+                month: 'numeric',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
             </p>
           </div>
         </div>

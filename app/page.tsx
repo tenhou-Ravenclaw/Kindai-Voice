@@ -93,13 +93,21 @@ function HomeContent() {
     router.push(`/lecture/${lectureId}`)
   }
 
-  // 日時をフォーマット
+  // 日時をフォーマット（タイムゾーン対応）
   const formatTime = (dateString: string | null) => {
     if (!dateString) return '時間未設定'
     const date = new Date(dateString)
+    
+    // 無効な日付の場合はエラーを返す
+    if (isNaN(date.getTime())) {
+      console.error('Invalid date string:', dateString)
+      return '時間不明'
+    }
+    
     return date.toLocaleTimeString('ja-JP', {
       hour: '2-digit',
       minute: '2-digit',
+      timeZone: 'Asia/Tokyo',
     })
   }
 

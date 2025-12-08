@@ -293,12 +293,26 @@ export default function LecturesPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {lecture.scheduled_start_time
-                      ? new Date(lecture.scheduled_start_time).toLocaleString('ja-JP')
+                      ? new Date(lecture.scheduled_start_time).toLocaleString('ja-JP', {
+                          timeZone: 'Asia/Tokyo',
+                          year: 'numeric',
+                          month: 'numeric',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
                       : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {lecture.scheduled_end_time
-                      ? new Date(lecture.scheduled_end_time).toLocaleString('ja-JP')
+                      ? new Date(lecture.scheduled_end_time).toLocaleString('ja-JP', {
+                          timeZone: 'Asia/Tokyo',
+                          year: 'numeric',
+                          month: 'numeric',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
                       : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
