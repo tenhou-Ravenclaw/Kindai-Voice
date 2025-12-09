@@ -262,6 +262,15 @@ export default function LecturePage() {
             setIsSubmitting(false)
         }
     }
+    // 人気順にソート
+    const sortPostsByPopularity = (posts: Post[]) => {
+        return [...posts].sort((a, b) => {
+            if (b.like_count !== a.like_count) {
+                return b.like_count - a.like_count
+            }
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        })
+    }
 
     // いいねをトグル
     const handleLike = async (postId: string) => {
@@ -297,16 +306,7 @@ export default function LecturePage() {
             })
 
             // 人気順の場合は再ソート
-            if (sort === 'popular') {
-                updatedPosts.sort((a, b) => {
-                    if (b.like_count !== a.like_count) {
-                        return b.like_count - a.like_count
-                    }
-                    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                })
-            }
-
-            return updatedPosts
+            return sort === 'popular' ? sortPostsByPopularity(updatedPosts) : updatedPosts
         })
 
         try {
@@ -355,16 +355,7 @@ export default function LecturePage() {
                     })
 
                     // 人気順の場合は再ソート
-                    if (sort === 'popular') {
-                        updatedPosts.sort((a, b) => {
-                            if (b.like_count !== a.like_count) {
-                                return b.like_count - a.like_count
-                            }
-                            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                        })
-                    }
-
-                    return updatedPosts
+                    return sort === 'popular' ? sortPostsByPopularity(updatedPosts) : updatedPosts
                 })
             }
         } catch (err) {
@@ -392,16 +383,7 @@ export default function LecturePage() {
                 })
 
                 // 人気順の場合は再ソート
-                if (sort === 'popular') {
-                    updatedPosts.sort((a, b) => {
-                        if (b.like_count !== a.like_count) {
-                            return b.like_count - a.like_count
-                        }
-                        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                    })
-                }
-
-                return updatedPosts
+                return sort === 'popular' ? sortPostsByPopularity(updatedPosts) : updatedPosts
             })
         } finally {
             setLikingPosts((prev) => {
