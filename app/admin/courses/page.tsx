@@ -9,6 +9,7 @@ export default function CoursesPage() {
     const router = useRouter()
     const [courses, setCourses] = useState<Course[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const [isGenerating, setIsGenerating] = useState(false)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingCourse, setEditingCourse] = useState<Course | null>(null)
     const [formData, setFormData] = useState({
@@ -143,6 +144,74 @@ export default function CoursesPage() {
         }
     }
 
+    const handleGenerateLectures = async (course: Course) => {
+        if (!course.first_session_date || !course.regular_start_time || !course.regular_end_time) {
+            alert('講義生成には「第1回目開催日」と「開始/終了時刻」の設定が必要です。編集ボタンから設定してください。')
+            return
+        }
+
+        if (!confirm(`「${course.title}」の講義セッション（全${course.total_sessions}回）を一括作成しますか？\n\n開始日: ${course.first_session_date}\n時間: ${course.regular_start_time.substring(0, 5)} - ${course.regular_end_time.substring(0, 5)}\n\n※既存のデータと重複する場合はエラーになります。`)) {
+            return
+        }
+
+        setIsGenerating(true)
+        let successCount = 0
+        let errorCount = 0
+
+        try {
+            const token = await getAuthToken()
+            if (!token) {
+                router.push('/login')
+                return
+            }
+
+            const createDate = (baseDateStr: string, timeStr: string, weeksOffset: number) => {
+                const date = new Date(baseDateStr)
+                date.setDate(date.getDate() + (weeksOffset * 7))
+                const [hours, minutes] = timeStr.split(':').map(Number)
+                date.setHours(hours, minutes, 0, 0)
+                const year = date.getFullYear()
+                const month = String(date.getMonth() + 1).padStart(2, '0')
+                const day = String(date.getDate()).padStart(2, '0')
+                const hh = String(date.getHours()).padStart(2, '0')
+                const mm = String(date.getMinutes()).padStart(2, '0')
+                return `${year}-${month}-${day}T${hh}:${mm}`
+            }
+
+            for (let i = 1; i <= course.total_sessions; i++) {
+                const startTime = createDate(course.first_session_date, course.regular_start_time, i - 1)
+                const endTime = createDate(course.first_session_date, course.regular_end_time, i - 1)
+
+                const response = await fetch('/api/admin/lectures', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                        course_id: course.id,
+                        session_number: i,
+                        status: 'scheduled',
+                        scheduled_start_time: startTime,
+                        scheduled_end_time: endTime,
+                        is_rescheduled: false,
+                    }),
+                })
+
+                if (response.ok) successCount++
+                else errorCount++
+            }
+
+            alert(`処理完了\n成功: ${successCount}件\n失敗(重複など): ${errorCount}件`)
+
+        } catch (error) {
+            console.error('講義生成エラー:', error)
+            alert('エラーが発生しました')
+        } finally {
+            setIsGenerating(false)
+        }
+    }
+
     const dayNames = ['日', '月', '火', '水', '木', '金', '土']
 
     if (isLoading) {
@@ -235,6 +304,14 @@ export default function CoursesPage() {
                                             : '-'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                        <button
+                                            onClick={() => handleGenerateLectures(course)}
+                                            disabled={isGenerating}
+                                            className="text-green-600 hover:text-green-900 dark:text-green-400 disabled:opacity-50 mr-2"
+                                            title="講義セッションを一括生成"
+                                        >
+                                            ⚡️ 生成
+                                        </button>
                                         <button
                                             onClick={() => handleEdit(course)}
                                             className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400"
