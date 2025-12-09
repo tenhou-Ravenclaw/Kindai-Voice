@@ -262,12 +262,52 @@ export default function LecturePage() {
             setIsSubmitting(false)
         }
     }
+    // 人気順にソート
+    const sortPostsByPopularity = (posts: Post[]) => {
+        return [...posts].sort((a, b) => {
+            if (b.like_count !== a.like_count) {
+                return b.like_count - a.like_count
+            }
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        })
+    }
 
     // いいねをトグル
     const handleLike = async (postId: string) => {
         if (likingPosts.has(postId)) return // 既に処理中
 
         setLikingPosts((prev) => new Set(prev).add(postId))
+
+        // 楽観的更新: 現在の状態を反転
+        const wasLiked = likedPosts.has(postId)
+        const optimisticLiked = !wasLiked
+
+        // すぐにUIを更新（楽観的更新）
+        setLikedPosts((prev) => {
+            const newSet = new Set(prev)
+            if (optimisticLiked) {
+                newSet.add(postId)
+            } else {
+                newSet.delete(postId)
+            }
+            return newSet
+        })
+
+        // 投稿のいいね数を楽観的に更新
+        setPosts((prevPosts) => {
+            const updatedPosts = prevPosts.map((post) => {
+                if (post.id === postId) {
+                    return {
+                        ...post,
+                        like_count: optimisticLiked ? post.like_count + 1 : Math.max(0, post.like_count - 1),
+                    }
+                }
+                return post
+            })
+
+            // 人気順の場合は再ソート
+            return sort === 'popular' ? sortPostsByPopularity(updatedPosts) : updatedPosts
+        })
 
         try {
             const response = await fetch('/api/likes', {
@@ -287,10 +327,43 @@ export default function LecturePage() {
                 throw new Error(data.error || 'いいねの処理に失敗しました')
             }
 
-            // いいね状態を更新
+            // APIレスポンスが楽観的更新と一致しない場合は修正
+            if (data.liked !== optimisticLiked) {
+                setLikedPosts((prev) => {
+                    const newSet = new Set(prev)
+                    if (data.liked) {
+                        newSet.add(postId)
+                    } else {
+                        newSet.delete(postId)
+                    }
+                    return newSet
+                })
+
+                setPosts((prevPosts) => {
+                    const updatedPosts = prevPosts.map((post) => {
+                        if (post.id === postId) {
+                            // 楽観的更新との差分を修正
+                            const delta = data.liked ? 1 : -1
+                            const optimisticDelta = optimisticLiked ? 1 : -1
+                            const correction = delta - optimisticDelta
+                            return {
+                                ...post,
+                                like_count: Math.max(0, post.like_count + correction),
+                            }
+                        }
+                        return post
+                    })
+
+                    // 人気順の場合は再ソート
+                    return sort === 'popular' ? sortPostsByPopularity(updatedPosts) : updatedPosts
+                })
+            }
+        } catch (err) {
+            console.error('いいねエラー:', err)
+            // エラー時はロールバック（元の状態に戻す）
             setLikedPosts((prev) => {
                 const newSet = new Set(prev)
-                if (data.liked) {
+                if (wasLiked) {
                     newSet.add(postId)
                 } else {
                     newSet.delete(postId)
@@ -298,33 +371,20 @@ export default function LecturePage() {
                 return newSet
             })
 
-            // 投稿のいいね数を更新
             setPosts((prevPosts) => {
                 const updatedPosts = prevPosts.map((post) => {
                     if (post.id === postId) {
                         return {
                             ...post,
-                            like_count: data.liked ? post.like_count + 1 : Math.max(0, post.like_count - 1),
+                            like_count: wasLiked ? post.like_count + 1 : Math.max(0, post.like_count - 1),
                         }
                     }
                     return post
                 })
 
                 // 人気順の場合は再ソート
-                if (sort === 'popular') {
-                    updatedPosts.sort((a, b) => {
-                        if (b.like_count !== a.like_count) {
-                            return b.like_count - a.like_count
-                        }
-                        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                    })
-                }
-
-                return updatedPosts
+                return sort === 'popular' ? sortPostsByPopularity(updatedPosts) : updatedPosts
             })
-        } catch (err) {
-            console.error('いいねエラー:', err)
-            // エラーは静かに処理（ユーザーには通知しない）
         } finally {
             setLikingPosts((prev) => {
                 const newSet = new Set(prev)
