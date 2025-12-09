@@ -159,8 +159,7 @@ export default function LecturePage() {
                                     return prevPosts
                                 }
                                 console.log('Adding new post to timeline:', newPost.id)
-                                // ソート順に応じて適切な位置に挿入
-                                // 新着順の場合は先頭に追加
+                                // 新しい投稿を先頭に追加（ソートは別のuseEffectで処理）
                                 return [newPost, ...prevPosts]
                             })
                         }
