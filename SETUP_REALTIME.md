@@ -2,6 +2,14 @@
 
 リアルタイム同期機能を使用するために、SupabaseでRealtimeを有効にする必要があります。
 
+## 重要：Realtimeが有効になっていない場合の症状
+
+もし以下の症状がある場合、Supabase Realtimeがpostsテーブルとlikesテーブルで有効になっていない可能性があります：
+
+- **新しい投稿が自動で表示されない**（ページをリロードしないと表示されない）
+- **他のユーザーのいいねがリアルタイムで反映されない**
+- ブラウザのコンソールに "Successfully subscribed to realtime updates" のログが表示されない
+
 ## 1. SupabaseダッシュボードでRealtimeを有効化
 
 ### 手順
@@ -22,7 +30,7 @@
    - `likes`テーブルを見つける
    - トグルスイッチをONにする
 
-### または、SQLで有効化
+### または、SQLで有効化（推奨）
 
 Supabase SQL Editorで以下を実行：
 
@@ -33,6 +41,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE posts;
 -- likesテーブルのRealtimeを有効化
 ALTER PUBLICATION supabase_realtime ADD TABLE likes;
 ```
+
+**または、プロジェクト内の migration ファイルを使用：**
+
+プロジェクトルートの `/migrations/enable_realtime.sql` ファイルの内容をコピーして、Supabase SQL Editorで実行してください。
 
 ## 2. 動作確認
 

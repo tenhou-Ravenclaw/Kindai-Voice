@@ -1,7 +1,7 @@
 'use client'
 
 import { useParams } from 'next/navigation'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { getUserIdentifier } from '@/lib/utils/user-identifier'
 import type { Post, Course, Lecture } from '@/lib/supabase/types'
