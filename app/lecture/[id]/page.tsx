@@ -131,6 +131,8 @@ export default function LecturePage() {
     useEffect(() => {
         if (!lectureId) return
 
+        console.log('Setting up realtime subscription for lecture:', lectureId)
+
         // 投稿の変更を監視
         const channel = supabase
             .channel(`posts:${lectureId}`)
@@ -143,6 +145,8 @@ export default function LecturePage() {
                     filter: `lecture_id=eq.${lectureId}`,
                 },
                 (payload) => {
+                    console.log('Realtime event received:', payload.eventType, payload)
+                    
                     // 新しい投稿が追加された場合
                     if (payload.eventType === 'INSERT') {
                         const newPost = payload.new as Post
@@ -151,16 +155,13 @@ export default function LecturePage() {
                             setPosts((prevPosts) => {
                                 // 既に存在する場合は追加しない（重複防止）
                                 if (prevPosts.some((p) => p.id === newPost.id)) {
+                                    console.log('Post already exists, skipping:', newPost.id)
                                     return prevPosts
                                 }
+                                console.log('Adding new post to timeline:', newPost.id)
                                 // ソート順に応じて適切な位置に挿入
-                                if (sort === 'newest') {
-                                    return [newPost, ...prevPosts]
-                                } else {
-                                    // 人気順の場合は再取得が必要
-                                    fetchPosts()
-                                    return prevPosts
-                                }
+                                // 新着順の場合は先頭に追加
+                                return [newPost, ...prevPosts]
                             })
                         }
                     }
@@ -177,18 +178,11 @@ export default function LecturePage() {
                                     // 既存の投稿を更新
                                     const newPosts = [...prevPosts]
                                     newPosts[index] = updatedPost
-                                    // ソート順に応じて再ソート
-                                    if (sort === 'popular') {
-                                        newPosts.sort((a, b) => {
-                                            if (b.like_count !== a.like_count) {
-                                                return b.like_count - a.like_count
-                                            }
-                                            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                                        })
-                                    }
                                     return newPosts
+                                } else {
+                                    // 投稿が見つからない場合は追加（まれなケース）
+                                    return [updatedPost, ...prevPosts]
                                 }
-                                return prevPosts
                             })
                         }
                     }
@@ -199,13 +193,43 @@ export default function LecturePage() {
                     }
                 }
             )
-            .subscribe()
+            .subscribe((status) => {
+                console.log('Realtime subscription status:', status)
+                if (status === 'SUBSCRIBED') {
+                    console.log('Successfully subscribed to realtime updates')
+                } else if (status === 'CHANNEL_ERROR') {
+                    console.error('Failed to subscribe to realtime updates')
+                } else if (status === 'TIMED_OUT') {
+                    console.error('Realtime subscription timed out')
+                } else if (status === 'CLOSED') {
+                    console.log('Realtime subscription closed')
+                }
+            })
 
         // クリーンアップ
         return () => {
+            console.log('Cleaning up realtime subscription')
             supabase.removeChannel(channel)
         }
-    }, [lectureId, sort])
+    }, [lectureId])
+
+    // ソート順が変更された時に投稿を再ソート
+    useEffect(() => {
+        setPosts((prevPosts) => {
+            const sorted = [...prevPosts]
+            if (sort === 'newest') {
+                sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            } else if (sort === 'popular') {
+                sorted.sort((a, b) => {
+                    if (b.like_count !== a.like_count) {
+                        return b.like_count - a.like_count
+                    }
+                    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                })
+            }
+            return sorted
+        })
+    }, [sort])
 
     // 投稿を送信
     const handleSubmit = async (e: React.FormEvent) => {
